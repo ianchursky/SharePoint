@@ -34,11 +34,11 @@ SharePoint.CustomUtilities.Users = {
             clientContext.load(personProperties);
             clientContext.executeQueryAsync(function(sender, args) {
                 
-				return {
-					'AccountName': personProperties.get_accountName(),
-					'PersonalUrl': personProperties.get_personalUrl(),
-					'PictureUrl': personProperties.get_pictureUrl()
-				};
+                return {
+                    'AccountName': personProperties.get_accountName(),
+                    'PersonalUrl': personProperties.get_personalUrl(),
+                    'PictureUrl': personProperties.get_pictureUrl()
+                };
                 
             }, function(sender, args){
                 console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
@@ -53,16 +53,16 @@ SharePoint.CustomUtilities.Users = {
         context.load(currentUser);
         context.executeQueryAsync(function(sender, args){
 			
-			return {
-				'ID': currentUser.get_id(),
-				'Title': currentUser.get_title(),
-				'UserId': currentUser.get_userId(),
-				'LoginName': currentUser.get_loginName(),
-				'Email': currentUser.get_email(),
-				'Path': currentUser.get_path(),
-				'IsSiteAdmin': currentUser.get_isSiteAdmin(),
-				'Groups': currentUser.get_groups(),
-			}; 
+            return {
+                'ID': currentUser.get_id(),
+                'Title': currentUser.get_title(),
+                'UserId': currentUser.get_userId(),
+                'LoginName': currentUser.get_loginName(),
+                'Email': currentUser.get_email(),
+                'Path': currentUser.get_path(),
+                'IsSiteAdmin': currentUser.get_isSiteAdmin(),
+                'Groups': currentUser.get_groups()
+            }; 
 			           
         }, function(sender, args){
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
