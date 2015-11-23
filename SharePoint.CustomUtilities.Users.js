@@ -16,7 +16,7 @@ SharePoint.CustomUtilities.Users = {
                 var personalSite = userProfile.get_personalSite();
                 clientContext.load(personalSite);
                 clientContext.executeQueryAsync(function (sender, args) {
-                	console.log(personalSite.get_url());
+                    console.log(personalSite.get_url());
                 }, function(sender, args){
                     console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
                 });
