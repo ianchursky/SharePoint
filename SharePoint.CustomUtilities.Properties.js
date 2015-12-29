@@ -3,6 +3,26 @@ SharePoint.CustomUtilities = SharePoint.CustomUtilities || {};
 
 SharePoint.CustomUtilities.Properties = {
 
+    getAllSPWebProperties: function(){
+        var clientContext = new SP.ClientContext();
+        var web = clientContext.get_web();
+        clientContext.load(web);
+        var webProperties = web.get_allProperties();
+        clientContext.load(webProperties);
+        clientContext.executeQueryAsync(Function.createDelegate(this, function (sender, args) {
+            var properties = webProperties.get_fieldValues();
+            for (var property in properties)
+            {
+                var propertyName = property;
+                var propertyValue = properties[property];
+                console.log(propertyName + " : " + propertyValue);
+            }
+        }),
+        function (sender, args) {
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });        
+    },
+
     getSPWebProperty: function(url, name){
         var clientContext = new SP.ClientContext(url);
         var webProperties = clientContext.get_web().get_allProperties();
