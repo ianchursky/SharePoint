@@ -25,6 +25,25 @@ SharePoint.CustomUtilities.Lists = {
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
         });                
     },
+    getAllListFields: function(name) {
+        var clientContext = new SP.ClientContext.get_current();
+        var web = clientContext.get_web();
+        var list = web.get_lists().getByTitle(name);   
+        var fields = list.get_fields(); // get fields / column names
+        clientContext.load(fields);
+        clientContext.executeQueryAsync(function(sender, args){
+            var fieldArray = [];
+            var fieldEnumerator = fields.getEnumerator();
+            while (fieldEnumerator.moveNext()) {
+                fieldArray.push(fieldEnumerator.get_current().get_title())
+            }
+            console.log(fieldArray);
+            return fieldArray;
+                              
+        }, function(sender, args){
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });                     
+    },
     getAllListItems: function(name) {
         var clientContext = new SP.ClientContext.get_current();
         var web = clientContext.get_web();
