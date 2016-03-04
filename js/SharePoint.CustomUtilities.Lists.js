@@ -64,5 +64,27 @@ SharePoint.CustomUtilities.Lists = {
         }, function(sender, args){
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
         });         
+    },
+    getAllListViews: function(name) {
+        var clientContext = new SP.ClientContext.get_current();
+        var web = clientContext.get_web();
+        var list = web.get_lists().getByTitle(name);   
+        var views = list.get_views(); // get views
+        
+        clientContext.load(views);
+        clientContext.executeQueryAsync(function(sender, args){
+            var viewArray = [];
+            var viewEnumerator = views.getEnumerator();
+            while (viewEnumerator.moveNext()) {
+                viewArray.push(viewEnumerator.get_current().get_title())
+            }
+            console.log(viewArray);
+            return viewArray;
+                              
+        }, function(sender, args){
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });                  
     }   
 };
+
+

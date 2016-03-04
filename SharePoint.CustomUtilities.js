@@ -126,8 +126,31 @@ SharePoint.CustomUtilities.Lists = {
         }, function(sender, args){
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
         });         
+    },
+    getAllListViews: function(name) {
+        var clientContext = new SP.ClientContext.get_current();
+        var web = clientContext.get_web();
+        var list = web.get_lists().getByTitle(name);   
+        var views = list.get_views(); // get views
+        
+        clientContext.load(views);
+        clientContext.executeQueryAsync(function(sender, args){
+            var viewArray = [];
+            var viewEnumerator = views.getEnumerator();
+            while (viewEnumerator.moveNext()) {
+                viewArray.push(viewEnumerator.get_current().get_title())
+            }
+            console.log(viewArray);
+            return viewArray;
+                              
+        }, function(sender, args){
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });                  
     }   
 };
+
+
+
 var SharePoint = SharePoint || {};
 SharePoint.CustomUtilities = SharePoint.CustomUtilities || {};
 
@@ -267,8 +290,32 @@ SharePoint.CustomUtilities.Search = {
         }, function(error){
             console.error(error)
         });
-    }
+    },
+    getPageSearchInfo: function(propertyArray){ // Credit: Ronnie B.
+        var context = SP.ClientContext.get_current();
+        var keywordQuery = new Microsoft.SharePoint.Client.Search.Query.KeywordQuery(context);
+        keywordQuery.set_queryText("Path:" + window.location.href);
+        var properties = keywordQuery.get_selectProperties();
         
+        for(var i =0; i < propertyArray.length; i++) {
+            properties.add(propertyArray[i]);
+        }
+        
+        var searchExecutor = new Microsoft.SharePoint.Client.Search.Query.SearchExecutor(context);
+        var results = searchExecutor.executeQuery(keywordQuery);
+        context.executeQueryAsync(function()  {
+            
+            if (results.m_value.ResultTables) {
+                $.each(results.m_value.ResultTables, function(index, table) {  
+                    if(table.TableType == "RelevantResults") {
+                        $.each(results.m_value.ResultTables[index].ResultRows, function () {  
+                            console.log(this);
+                        })  
+                    }
+                });  
+            }           
+        });
+    }
 };
 var SharePoint = SharePoint || {};
 SharePoint.CustomUtilities = SharePoint.CustomUtilities || {};
