@@ -35,11 +35,19 @@ SharePoint.CustomUtilities.Lists = {
             var fieldArray = [];
             var fieldEnumerator = fields.getEnumerator();
             while (fieldEnumerator.moveNext()) {
-                fieldArray.push(fieldEnumerator.get_current().get_title())
+                // https://msdn.microsoft.com/en-us/library/ee553810.aspx
+                fieldArray.push({
+                    'ID': fieldEnumerator.get_current().get_id(),
+                    'Group': fieldEnumerator.get_current().get_group(),
+                    'Title': fieldEnumerator.get_current().get_title(),
+                    'Static Name': fieldEnumerator.get_current().get_staticName(),
+                    'Internal Name': fieldEnumerator.get_current().get_internalName(),
+                    'Field Type Kind': fieldEnumerator.get_current().get_fieldTypeKind()
+                });
+                
             }
             console.log(fieldArray);
-            return fieldArray;
-                              
+            return fieldArray;         
         }, function(sender, args){
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
         });                     
@@ -84,6 +92,19 @@ SharePoint.CustomUtilities.Lists = {
         }, function(sender, args){
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
         });                  
+    },
+    getListItemsInView: function(listName, viewName) {
+        var self = this;
+        var clientContext = SP.ClientContext.get_current();
+        var list = clientContext.get_web().get_lists().getByTitle(listName);
+        var view = list.get_views().getByTitle(viewName);
+        clientContext.load(view,'ViewQuery');
+        clientContext.executeQueryAsync(function(sender, args){
+             var viewQuery = "<View><Query>" + view.get_viewQuery() + "</Query></View>";
+             self.getAllListItems(listName, viewQuery);                      
+        }, function(sender, args){
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });                 
     }   
 };
 
