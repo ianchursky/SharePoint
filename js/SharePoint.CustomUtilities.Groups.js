@@ -20,6 +20,8 @@ SharePoint.CustomUtilities.Groups = {
                     'Title': item.get_title()
                 });
             }
+            console.log(groupArray);
+            return groupArray;
 
         }, function(sender, args){
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
@@ -51,12 +53,38 @@ SharePoint.CustomUtilities.Groups = {
                 };
                 itemArray.push(data);            
             }
-
+            console.log(itemArray);
             return itemArray;
                         
         }, function(sender, args) {
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
         });    
-    }    
+    },
+    getUsersInGroupByName: function(groupName) {
+        var clientContext = new SP.ClientContext.get_current();
+        var groupCollection = clientContext.get_web().get_siteGroups();
+        var membersGroup = groupCollection.getByName(groupName);
+        var users = membersGroup.get_users();
+        clientContext.load(users);
+        clientContext.executeQueryAsync(function (sender, args) {
+        
+            var userEnumerator = users.getEnumerator();
+            var userArray = [];
+            while (userEnumerator.moveNext()) {
+                var item = userEnumerator.get_current();
+                var data = {
+                    'ID': item.get_id(),
+                    'Title': item.get_title(),
+                    'Email': item.get_email(),
+                    'LoginName': item.get_loginName()
+                }
+                console.log(data);
+                userArray.push(data);
+            }
+        
+        }, function (sender, args) {
+            console.log(args)
+        });        
+    }        
     
 };

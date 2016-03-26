@@ -20,6 +20,8 @@ SharePoint.CustomUtilities.Groups = {
                     'Title': item.get_title()
                 });
             }
+            console.log(groupArray);
+            return groupArray;
 
         }, function(sender, args){
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
@@ -51,13 +53,39 @@ SharePoint.CustomUtilities.Groups = {
                 };
                 itemArray.push(data);            
             }
-
+            console.log(itemArray);
             return itemArray;
                         
         }, function(sender, args) {
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
         });    
-    }    
+    },
+    getUsersInGroupByName: function(groupName) {
+        var clientContext = new SP.ClientContext.get_current();
+        var groupCollection = clientContext.get_web().get_siteGroups();
+        var membersGroup = groupCollection.getByName(groupName);
+        var users = membersGroup.get_users();
+        clientContext.load(users);
+        clientContext.executeQueryAsync(function (sender, args) {
+        
+            var userEnumerator = users.getEnumerator();
+            var userArray = [];
+            while (userEnumerator.moveNext()) {
+                var item = userEnumerator.get_current();
+                var data = {
+                    'ID': item.get_id(),
+                    'Title': item.get_title(),
+                    'Email': item.get_email(),
+                    'LoginName': item.get_loginName()
+                }
+                console.log(data);
+                userArray.push(data);
+            }
+        
+        }, function (sender, args) {
+            console.log(args)
+        });        
+    }        
     
 };
 var SharePoint = SharePoint || {};
@@ -343,28 +371,29 @@ SharePoint.CustomUtilities = SharePoint.CustomUtilities || {};
 
 SharePoint.CustomUtilities.Users = {
 
-    // https://msdn.microsoft.com/en-us/library/office/jj667833.aspx
-    getMyPersonalSiteUrl: function(){
-
-        // does the current user have a personal site?
-        SP.SOD.executeFunc('userprofile', 'SP.UserProfiles', function () {
-            var clientContext = SP.ClientContext.get_current();
-            var profileLoader = new SP.UserProfiles.ProfileLoader.getProfileLoader(clientContext);
-            var userProfile = profileLoader.getUserProfile();
-            clientContext.load(userProfile);
-            clientContext.executeQueryAsync(function(sender, args) {
-                var personalSite = userProfile.get_personalSite();
-                clientContext.load(personalSite);
-                clientContext.executeQueryAsync(function (sender, args) {
-                    console.log(personalSite.get_url());
-                }, function(sender, args){
-                    console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
-                });
-            });
-        });
-    },
-    
     // https://msdn.microsoft.com/en-us/library/office/jj712733.aspx
+    getUserProfileProperties: function(name){
+        SP.SOD.executeFunc('personproperties', 'SP.UserProfiles', function () {
+            var clientContext = new SP.ClientContext.get_current();
+            var peopleManager = new SP.UserProfiles.PeopleManager(clientContext);
+            var personProperties = peopleManager.getPropertiesFor(name); /* string: 'domain\\name' for SharePoint on prem and 'i:0#.f|membership|admin@domainname.onmicrosoft.com' for Office 365 */
+            clientContext.load(personProperties);
+            clientContext.executeQueryAsync(function(sender, args) {
+                
+                console.log(personProperties.get_userProfileProperties());
+                
+                return {
+                    'AccountName': personProperties.get_accountName(),
+                    'PersonalUrl': personProperties.get_personalUrl(),
+                    'PictureUrl': personProperties.get_pictureUrl(),
+                    'Properties': personProperties.get_userProfileProperties()
+                };
+
+            }, function(sender, args){
+                console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+            });
+        });                
+    },
     getMyProfileProperties: function(){
 
         SP.SOD.executeFunc('personproperties', 'SP.UserProfiles', function () {
@@ -374,10 +403,13 @@ SharePoint.CustomUtilities.Users = {
             clientContext.load(personProperties);
             clientContext.executeQueryAsync(function(sender, args) {
                 
+                console.log(personProperties.get_userProfileProperties());
+                
                 return {
                     'AccountName': personProperties.get_accountName(),
                     'PersonalUrl': personProperties.get_personalUrl(),
-                    'PictureUrl': personProperties.get_pictureUrl()
+                    'PictureUrl': personProperties.get_pictureUrl(),
+                    'Properties': personProperties.get_userProfileProperties()
                 };
                 
             }, function(sender, args){
@@ -409,30 +441,53 @@ SharePoint.CustomUtilities.Users = {
         });        
         
     },
-    getUsersInGroupByName: function(groupName) {
-        var clientContext = new SP.ClientContext.get_current();
-        var groupCollection = clientContext.get_web().get_siteGroups();
-        var membersGroup = groupCollection.getByName(groupName);
-        var users = membersGroup.get_users();
-        clientContext.load(users);
-        clientContext.executeQueryAsync(function (sender, args) {
-        
-            var userEnumerator = users.getEnumerator();
+    // https://msdn.microsoft.com/en-us/library/office/jj667833.aspx
+    getMyPersonalSiteUrl: function(){
+
+        // does the current user have a personal site?
+        SP.SOD.executeFunc('userprofile', 'SP.UserProfiles', function () {
+            var clientContext = SP.ClientContext.get_current();
+            var profileLoader = new SP.UserProfiles.ProfileLoader.getProfileLoader(clientContext);
+            var userProfile = profileLoader.getUserProfile();
+            clientContext.load(userProfile);
+            clientContext.executeQueryAsync(function(sender, args) {
+                var personalSite = userProfile.get_personalSite();
+                clientContext.load(personalSite);
+                clientContext.executeQueryAsync(function (sender, args) {
+                    console.log(personalSite.get_url());
+                }, function(sender, args){
+                    console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+                });
+            });
+        });
+    },    
+    getAllSiteUsers: function(){
+        var context = new SP.ClientContext.get_current();
+        var website = context.get_web();
+        var userList = website.get_siteUsers();
+        context.load(userList);
+        context.executeQueryAsync(function(sender, args){
+            
+            var userEnumerator = userList.getEnumerator();
             var userArray = [];
             while (userEnumerator.moveNext()) {
-                var item = userEnumerator.get_current();
+                var user = userEnumerator.get_current();
                 var data = {
-                    'ID': item.get_id(),
-                    'Title': item.get_title(),
-                    'Email': item.get_email(),
-                    'LoginName': item.get_loginName()
+                    'ID': user.get_id(),
+                    'Title': user.get_title(),
+                    'Email': user.get_email(),
+                    'LoginName': user.get_loginName()
                 }
-                userArray.push(data);
+                
+                userArray.push(data)
+            }   
+            
+            console.log(userArray);
+            return userArray;
+            
+        }, function(sender, args){
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });           
         
-            }
-        
-        }, function (sender, args) {
-            console.log(args)
-        });        
     }    
 };
