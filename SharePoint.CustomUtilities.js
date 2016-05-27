@@ -3,10 +3,10 @@ SharePoint.CustomUtilities = SharePoint.CustomUtilities || {};
 
 SharePoint.CustomUtilities.CustomActions = {
     
-    getAllCustomActions: function(name, url){
+    getAllCustomActions: function(scope){
         SP.SOD.executeFunc('sp.js', 'SP.ClientContext', function () {
             var clientContext = SP.ClientContext.get_current();
-            var web = clientContext.get_web();
+            var web = scope === 'site' ? clientContext.get_site() : clientContext.get_web();
             var customActions = web.get_userCustomActions();
             var customActionArray = [];
             clientContext.load(customActions);
@@ -25,28 +25,29 @@ SharePoint.CustomUtilities.CustomActions = {
             });
         });                
     },       
-    setCustomAction: function(name, url){
+    setCustomAction: function(name, description, url, sequence, scope){
         SP.SOD.executeFunc('sp.js', 'SP.ClientContext', function () {
             var clientContext = SP.ClientContext.get_current();
-            var web = clientContext.get_web();
+            var web = scope === 'site' ? clientContext.get_site() : clientContext.get_web();
             var customActions = web.get_userCustomActions();
             clientContext.load(customActions);
             clientContext.executeQueryAsync(function () {
                 customAction = customActions.add();
                 customAction.set_title(name);
                 customAction.set_location("ScriptLink");
+                customAction.set_description(description || "No Description");
                 customAction.set_scriptSrc(url);
-                customAction.set_sequence(100);
+                customAction.set_sequence(sequence || 100);
                 customAction.update();
                 clientContext.executeQueryAsync();
             });
         })                
     },
-    removeCustomAction: function(name) {
+    removeCustomAction: function(name, scope) {
         
         SP.SOD.executeFunc('sp.js', 'SP.ClientContext', function () {
             var clientContext = SP.ClientContext.get_current();
-            var web = clientContext.get_web();
+            var web = scope === 'site' ? clientContext.get_site() : clientContext.get_web();
             var customActions = web.get_userCustomActions();
 
             var customAction;
