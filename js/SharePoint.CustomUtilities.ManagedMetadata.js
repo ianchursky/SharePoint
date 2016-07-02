@@ -73,14 +73,14 @@ SharePoint.CustomUtilities.ManagedMetadata = {
                         context.executeQueryAsync(function (sender, args) {
                             var termSetsEnumerator = termSets.getEnumerator();
                             var termSetArray = [];
-                            while(termSetsEnumerator.moveNext()){ 
+                            while(termSetsEnumerator.moveNext()) { 
                                 var termSet = termSetsEnumerator.get_current();
                                 termSetArray.push({
                                     'id': termSet.get_id(),
                                     'name': termSet.get_name()
                                 });
                             }
-                            
+
                             console.log(termSetArray);
 
                         }, function(sender, args){
@@ -98,22 +98,22 @@ SharePoint.CustomUtilities.ManagedMetadata = {
         });
 
     },     
-	getDefaultSiteCollectionTermGroup: function () {
+    getDefaultSiteCollectionTermGroup: function () {
 
-		var context = SP.ClientContext.get_current();
-		var taxonomySession = SP.Taxonomy.TaxonomySession.getTaxonomySession(context);
-		var termStore = taxonomySession.getDefaultSiteCollectionTermStore();
-		var termGroup = termStore.getSiteCollectionGroup(context.get_site(), true);
-		context.load(termGroup);
-		context.executeQueryAsync(function () {
-			var defaultGroup = termGroup.get_name();
+        var context = SP.ClientContext.get_current();
+        var taxonomySession = SP.Taxonomy.TaxonomySession.getTaxonomySession(context);
+        var termStore = taxonomySession.getDefaultSiteCollectionTermStore();
+        var termGroup = termStore.getSiteCollectionGroup(context.get_site(), true);
+        context.load(termGroup);
+        context.executeQueryAsync(function () {
+            var defaultGroup = termGroup.get_name();
             console.log(defaultGroup)
-		}, function (sender, args) {
+        }, function (sender, args) {
             console.error('Error: ' + args.get_message() + '\n' + args.get_stackTrace());
         });
 
-	},  
-    getTerms: function(termSetName){
+    },      
+    getTermsByTermSetName: function(termSetName){
         var context = SP.ClientContext.get_current();
         var taxonomySession = SP.Taxonomy.TaxonomySession.getTaxonomySession(context);
         var termStore = taxonomySession.getDefaultSiteCollectionTermStore();
@@ -137,5 +137,30 @@ SharePoint.CustomUtilities.ManagedMetadata = {
         }, function (sender, args) {
             console.error('Error: ' + args.get_message() + '\n' + args.get_stackTrace());
         });        
-    }
+    },
+    getTermsByTermSetId(termsetId){
+
+        var context = SP.ClientContext.get_current();
+        var taxonomySession = SP.Taxonomy.TaxonomySession.getTaxonomySession(context);
+        var termStore = taxonomySession.getDefaultSiteCollectionTermStore();
+        var termSet = termStore.getTermSet(termsetId);
+        var terms = termSet.getAllTerms();
+        context.load(terms);
+        context.executeQueryAsync(function(){
+            var termEnumerator = terms.getEnumerator();
+            var termArray = [];
+            while (termEnumerator.moveNext()) {
+                var term = termEnumerator.get_current();
+                termArray.push({
+                    'id': term.get_id(),
+                    'name': term.get_name()
+                });
+            }
+            console.log(termArray);
+
+        }, function(sender,args){
+            console.log(args.get_message());
+        });
+
+    }    
 }
