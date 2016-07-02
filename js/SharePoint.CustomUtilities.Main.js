@@ -4,6 +4,7 @@ SharePoint.CustomUtilities = SharePoint.CustomUtilities || {};
 SharePoint.CustomUtilities.Main = {
     
     // e.g. _spPageContextInfo.webServerRelativeUrl + "/_api/web/lists/getbytitle('Pages')/items"
+    //      _spPageContextInfo.webServerRelativeUrl + "/_api/web/sitegroups"
     ajax: function(type, url, successCallback, errorCallback) {
         var xhr = new XMLHttpRequest();
         if(typeof type === 'undefined') {

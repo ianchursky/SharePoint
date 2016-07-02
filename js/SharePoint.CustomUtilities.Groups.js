@@ -4,6 +4,7 @@ SharePoint.CustomUtilities = SharePoint.CustomUtilities || {};
 SharePoint.CustomUtilities.Groups = {
 
     // https://msdn.microsoft.com/en-us/library/office/jj667833.aspx
+    // API Endpoint: _spPageContextInfo.webServerRelativeUrl + "/_api/web/sitegroups"
     getSiteGroups: function(){
         var clientContext = SP.ClientContext.get_current(); 
         var web = clientContext.get_web(); 
