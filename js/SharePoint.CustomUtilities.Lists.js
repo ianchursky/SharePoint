@@ -105,7 +105,37 @@ SharePoint.CustomUtilities.Lists = {
         }, function(sender, args){
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
         });                 
-    }   
+    },
+    deleteListItem: function(listName, itemName) {
+        var clientContext = new SP.ClientContext.get_current();
+        var web = clientContext.get_web();
+        var list = web.get_lists().getByTitle(listName);   
+        var camlQuery = new SP.CamlQuery();
+        camlQuery.set_viewXml("<View><Query><Where><Eq><FieldRef Name='Name' /><Value Type='Text'>"+ itemName +"</Value></Eq></Where></Query></View>");
+        var items = list.getItems(camlQuery);
+        clientContext.load(items);
+        clientContext.executeQueryAsync(function(sender, args){
+            var itemEnumerator = items.getEnumerator();
+            var itemArray = []; // Sys.InvalidOperationException is thrown if list is modified while iterating
+            while (itemEnumerator.moveNext()) {
+                var item = itemEnumerator.get_current();
+                itemArray.push(item);
+            }
+ 
+            itemArray.forEach(function(item){
+                item.deleteObject(); 
+            });
+
+            clientContext.executeQueryAsync(function(sender, args){
+                console.log('Success');
+            }, function(sender, args){
+                console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+            });
+                                
+        }, function(sender, args){
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });                 
+    },       
 };
 
 
