@@ -24,7 +24,7 @@ SharePoint.CustomUtilities.Properties = {
     },
 
     getSPWebProperty: function(url, name){
-        var clientContext = new SP.ClientContext(url);
+        var clientContext = url ? new SP.ClientContext(url) : new SP.ClientContext().get_current();
         var webProperties = clientContext.get_web().get_allProperties();
         clientContext.load(webProperties);
         clientContext.executeQueryAsync(Function.createDelegate(this, function (sender, args) {
@@ -37,18 +37,17 @@ SharePoint.CustomUtilities.Properties = {
 	
     setSPWebProperty: function(url, name, value){
 
-        var clientContext = new SP.ClientContext(url);
+        var clientContext = url ? new SP.ClientContext(url) : new SP.ClientContext().get_current();
         var web = clientContext.get_web();
         clientContext.load(web);
         var webProperties = web.get_allProperties();
         clientContext.load(webProperties);
         webProperties.set_item(name, value);
         web.update();
-        clientContext.executeQueryAsync(Function.createDelegate(this, function (sender, args) {
+        clientContext.executeQueryAsync(function (sender, args) {
             var prop = webProperties.get_fieldValues()[name];
-        }),
-        function (sender, args) {
+        },function (sender, args) {
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
         });
-    } 
+    }
 };

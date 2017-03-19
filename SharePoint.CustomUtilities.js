@@ -407,7 +407,31 @@ SharePoint.CustomUtilities.Lists = {
         }, function(sender, args){
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
         });                 
-    },       
+    }, 
+    getImageRenditions: function(){
+        var clientContext = new SP.ClientContext.get_current();
+        var renditions = SP.Publishing.SiteImageRenditions.getRenditions(clientContext);
+        clientContext.executeQueryAsync(function(sender, args){
+            var itemArray = [];
+            
+            renditions.forEach(function(item, index){
+                itemArray.push({
+                    'ID': item.get_id(),
+                    'TypeID': item.get_typeId(), 
+                    'Version': item.get_version(), 
+                    'Name': item.get_name(),
+                    'Group': item.get_group(),     
+                    'Width': item.get_width(),        
+                    'Height': item.get_height(), 
+                });
+            })
+
+            console.log(itemArray);
+
+        }, function(sender, args){
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });        
+    }       
 };
 
 
@@ -636,7 +660,7 @@ SharePoint.CustomUtilities.Properties = {
     },
 
     getSPWebProperty: function(url, name){
-        var clientContext = new SP.ClientContext(url);
+        var clientContext = url ? new SP.ClientContext(url) : new SP.ClientContext().get_current();
         var webProperties = clientContext.get_web().get_allProperties();
         clientContext.load(webProperties);
         clientContext.executeQueryAsync(Function.createDelegate(this, function (sender, args) {
@@ -649,20 +673,19 @@ SharePoint.CustomUtilities.Properties = {
 	
     setSPWebProperty: function(url, name, value){
 
-        var clientContext = new SP.ClientContext(url);
+        var clientContext = url ? new SP.ClientContext(url) : new SP.ClientContext().get_current();
         var web = clientContext.get_web();
         clientContext.load(web);
         var webProperties = web.get_allProperties();
         clientContext.load(webProperties);
         webProperties.set_item(name, value);
         web.update();
-        clientContext.executeQueryAsync(Function.createDelegate(this, function (sender, args) {
+        clientContext.executeQueryAsync(function (sender, args) {
             var prop = webProperties.get_fieldValues()[name];
-        }),
-        function (sender, args) {
+        },function (sender, args) {
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
         });
-    } 
+    }
 };
 var SharePoint = SharePoint || {};
 SharePoint.CustomUtilities = SharePoint.CustomUtilities || {};
@@ -713,6 +736,35 @@ SharePoint.CustomUtilities.Search = {
             }           
         });
     }
+};
+var SharePoint = SharePoint || {};
+SharePoint.CustomUtilities = SharePoint.CustomUtilities || {};
+
+SharePoint.CustomUtilities.Sites = {
+
+    loopSubWebs: function() {
+        var clientContext = new SP.ClientContext();
+        var web = clientContext.get_web();
+        var webs = web.get_webs()
+        clientContext.load(webs);
+        clientContext.executeQueryAsync(function (sender, args) {
+            var webEnumerator = webs.getEnumerator();
+            var subwebArray = [];
+            while (webEnumerator.moveNext()) {
+                subwebArray.push({
+                    "title": webEnumerator.get_current().get_title(),
+                    "url": webEnumerator.get_current().get_url()
+                });
+            }
+
+            console.log(subwebArray);
+            return subwebArray;
+
+        }, function (sender, args) {
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });
+    }
+        
 };
 var SharePoint = SharePoint || {};
 SharePoint.CustomUtilities = SharePoint.CustomUtilities || {};

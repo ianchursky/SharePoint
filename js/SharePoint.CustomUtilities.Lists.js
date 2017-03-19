@@ -135,7 +135,31 @@ SharePoint.CustomUtilities.Lists = {
         }, function(sender, args){
             console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
         });                 
-    },       
+    }, 
+    getImageRenditions: function(){
+        var clientContext = new SP.ClientContext.get_current();
+        var renditions = SP.Publishing.SiteImageRenditions.getRenditions(clientContext);
+        clientContext.executeQueryAsync(function(sender, args){
+            var itemArray = [];
+            
+            renditions.forEach(function(item, index){
+                itemArray.push({
+                    'ID': item.get_id(),
+                    'TypeID': item.get_typeId(), 
+                    'Version': item.get_version(), 
+                    'Name': item.get_name(),
+                    'Group': item.get_group(),     
+                    'Width': item.get_width(),        
+                    'Height': item.get_height(), 
+                });
+            })
+
+            console.log(itemArray);
+
+        }, function(sender, args){
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });        
+    }       
 };
 
 
