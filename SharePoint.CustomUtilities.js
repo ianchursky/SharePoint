@@ -1,5 +1,5 @@
 var SharePoint = SharePoint || {};
-SharePoint.ContentTypes = SharePoint.ContentTypes || {};
+SharePoint.CustomUtilities = SharePoint.CustomUtilities || {};
 
 SharePoint.CustomUtilities.ContentTypes = {
 
