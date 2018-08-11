@@ -1,4 +1,77 @@
 var SharePoint = SharePoint || {};
+SharePoint.ContentTypes = SharePoint.ContentTypes || {};
+
+SharePoint.CustomUtilities.ContentTypes = {
+
+    getContentType: function(contentTypeId){
+        var clientContext = SP.ClientContext.get_current();
+        var web = clientContext.get_web();
+        var contentTypeCollection = web.get_contentTypes();
+        var contentType = contentTypeCollection.getById(contentTypeId);      
+        contentType.get_name();
+    },
+
+    getFieldsOnContentType: function(contentTypeId){
+        var clientContext = SP.ClientContext.get_current();
+        var web = clientContext.get_web();
+        var contentTypeCollection = web.get_contentTypes();
+        var contentType = contentTypeCollection.getById(contentTypeId)
+        var fields = contentType.get_fields();
+        clientContext.load(fields);
+        clientContext.executeQueryAsync(function(){
+            var fieldEnumerator = fields.getEnumerator();
+            while (fieldEnumerator.moveNext()) {
+                var item = fieldEnumerator.get_current();
+                var data = {
+                    'ID': item.get_id().toString(),
+                    'Title': item.get_title(),
+                }
+                console.log(data);
+            }
+        },
+        function(sender,args){ 
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });        
+    },
+
+    getSiteFields: function(){
+        var clientContext = new SP.ClientContext.get_current();
+        var web = clientContext.get_web();
+        var fields = web.get_fields();
+        clientContext.load(fields);
+        clientContext.executeQueryAsync(function(){
+            var fieldEnumerator = fields.getEnumerator();
+            while (fieldEnumerator.moveNext()) {
+                var item = fieldEnumerator.get_current();
+                var data = {
+                    'ID': item.get_id().toString(),
+                    'Title': item.get_title(),
+                }
+                console.log(data);
+            }            
+        },
+        function(sender,args){ 
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });                 
+    },
+
+    setSiteFieldToHidden: function(title){
+        var clientContext = new SP.ClientContext.get_current();
+        var web = clientContext.get_web();
+        var fields = web.get_fields();
+        var field = fields.getByTitle(title);
+        field.set_hidden(true);
+        clientContext.load(field);                
+        clientContext.executeQueryAsync(function(){  
+            console.log("Field " + title + " set to hidden...")   
+        },
+        function(sender,args){ 
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });                 
+    }    
+
+}
+var SharePoint = SharePoint || {};
 SharePoint.CustomUtilities = SharePoint.CustomUtilities || {};
 
 SharePoint.CustomUtilities.CustomActions = {
@@ -265,9 +338,34 @@ SharePoint.CustomUtilities.Groups = {
             }
         
         }, function (sender, args) {
-            console.log(args)
+            console.error(args)
         });        
-    }        
+    },
+    createSiteGroup: function(name, description) {
+        var clientContext = new SP.ClientContext.get_current();
+        var web = clientContext.get_web();
+        var groupCollection = web.get_siteGroups();
+        
+        var group = new SP.GroupCreationInformation();
+        group.set_title(name);
+        group.set_description(description);
+
+        var newGroup = groupCollection.add(group);
+        var roleDefinition = web.get_roleDefinitions().getByType(SP.RoleType.editor);
+        var roleDefinitionCollection = SP.RoleDefinitionBindingCollection.newObject(clientContext);  
+        roleDefinitionCollection.add(roleDefinition);   
+        var roleAssignments = web.get_roleAssignments();  
+        roleAssignments.add(newGroup, roleDefinitionCollection);           
+        newGroup.set_allowMembersEditMembership(true);  
+        newGroup.set_onlyAllowMembersViewMembership(false);
+
+        clientContext.executeQueryAsync(function (sender, args) {
+            console.log("Group " + name + " created...")
+        }, function (sender, args) {
+            console.error(args)
+        });        
+    },
+
     
 };
 var SharePoint = SharePoint || {};
@@ -842,6 +940,46 @@ SharePoint.CustomUtilities.Search = {
                 });  
             }           
         });
+    },
+
+    getAllUsers: function(searchTerm) {
+ 
+        var clientContext = new SP.ClientContext.get_current();
+        var keywordQuery = new Microsoft.SharePoint.Client.Search.Query.KeywordQuery(clientContext);
+        keywordQuery.set_queryText(searchTerm);
+        keywordQuery.set_sourceId("B09A7990-05EA-4AF9-81EF-EDFAB16C4E31");
+        keywordQuery.set_rowLimit(500);
+        keywordQuery.set_trimDuplicates(false); 
+        var searchExecutor = new Microsoft.SharePoint.Client.Search.Query.SearchExecutor(clientContext);
+        var results = searchExecutor.executeQuery(keywordQuery);
+         
+        clientContext.executeQueryAsync(function(sender, args){
+            console.log(results)
+        },
+        function(sender, args){
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        }); 
+    },
+    getSearchResults: function (queryResponse) {
+        var results = { };
+        results.elapsedTime = queryResponse.ElapsedTime;
+        results.suggestion = queryResponse.SpellingSuggestion;
+        results.resultsCount = queryResponse.PrimaryQueryResult.RelevantResults.RowCount;
+        results.totalResults = queryResponse.PrimaryQueryResult.RelevantResults.TotalRows;
+        results.totalResultsIncludingDuplicates = queryResponse.PrimaryQueryResult.RelevantResults.TotalRowsIncludingDuplicates;
+        results.items = this.convertSearchRowsToObjects(queryResponse.PrimaryQueryResult.RelevantResults.Table.Rows.results);
+        return results;
+    },    
+    convertSearchRowsToObjects: function (itemRows) {
+        var items = [];
+        for (var i = 0; i < itemRows.length; i++) {
+            var row = itemRows[i], item = {};
+            for (var j = 0; j < row.Cells.results.length; j++) {
+                item[row.Cells.results[j].Key] = row.Cells.results[j].Value;
+            }
+            items.push(item);
+        }
+        return items;
     }
 };
 var SharePoint = SharePoint || {};
@@ -1035,7 +1173,7 @@ SharePoint.CustomUtilities.Users = {
                 console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
             });
         });                
-    },
+    },  
     getMyProfileProperties: function(){
 
         SP.SOD.executeFunc('personproperties', 'SP.UserProfiles', function () {
@@ -1060,6 +1198,34 @@ SharePoint.CustomUtilities.Users = {
             
         });
     },
+    setUserProfileProperties: function(){
+        var clientContext = SP.ClientContext.get_current();
+        var peopleManager = new SP.UserProfiles.PeopleManager(clientContext);
+        var userProfileProperties = peopleManager.getMyProperties();
+        clientContext.load(userProfileProperties);
+        clientContext.executeQueryAsync(function () {
+    
+            var currentUserAccountName = userProfileProperties.get_accountName();
+            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "Office", "Seattle");
+            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "Department", "Sales");
+            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "SPS-MUILanguages", "en-GB,en-US");
+            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "SPS-ContentLanguages", "en-GB");
+            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "SPS-Locale", "1033"); 
+
+            //Set a multivalue property 
+            var projects = ["SharePoint", "Office 365", "Architecture"];
+            peopleManager.setMultiValuedProfileProperty(currentUserAccountName, "SPS-PastProjects", projects);
+    
+            clientContext.executeQueryAsync(function () {
+                console.log("User profile properties changed...");
+            }, function (sender, args) {
+                console.log(args.get_message());
+            });
+    
+        }, function (sender, args) {
+            console.log(args.get_message());
+        });        
+    },      
     getMyUserInfoForSite: function(){
         var context = new SP.ClientContext.get_current();
         var website = context.get_web();

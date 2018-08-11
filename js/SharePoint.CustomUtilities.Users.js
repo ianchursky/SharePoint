@@ -25,7 +25,7 @@ SharePoint.CustomUtilities.Users = {
                 console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
             });
         });                
-    },
+    },  
     getMyProfileProperties: function(){
 
         SP.SOD.executeFunc('personproperties', 'SP.UserProfiles', function () {
@@ -50,6 +50,34 @@ SharePoint.CustomUtilities.Users = {
             
         });
     },
+    setUserProfileProperties: function(){
+        var clientContext = SP.ClientContext.get_current();
+        var peopleManager = new SP.UserProfiles.PeopleManager(clientContext);
+        var userProfileProperties = peopleManager.getMyProperties();
+        clientContext.load(userProfileProperties);
+        clientContext.executeQueryAsync(function () {
+    
+            var currentUserAccountName = userProfileProperties.get_accountName();
+            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "Office", "Seattle");
+            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "Department", "Sales");
+            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "SPS-MUILanguages", "en-GB,en-US");
+            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "SPS-ContentLanguages", "en-GB");
+            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "SPS-Locale", "1033"); 
+
+            //Set a multivalue property 
+            var projects = ["SharePoint", "Office 365", "Architecture"];
+            peopleManager.setMultiValuedProfileProperty(currentUserAccountName, "SPS-PastProjects", projects);
+    
+            clientContext.executeQueryAsync(function () {
+                console.log("User profile properties changed...");
+            }, function (sender, args) {
+                console.log(args.get_message());
+            });
+    
+        }, function (sender, args) {
+            console.log(args.get_message());
+        });        
+    },      
     getMyUserInfoForSite: function(){
         var context = new SP.ClientContext.get_current();
         var website = context.get_web();

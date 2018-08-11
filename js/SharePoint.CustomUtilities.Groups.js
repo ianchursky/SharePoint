@@ -84,8 +84,33 @@ SharePoint.CustomUtilities.Groups = {
             }
         
         }, function (sender, args) {
-            console.log(args)
+            console.error(args)
         });        
-    }        
+    },
+    createSiteGroup: function(name, description) {
+        var clientContext = new SP.ClientContext.get_current();
+        var web = clientContext.get_web();
+        var groupCollection = web.get_siteGroups();
+        
+        var group = new SP.GroupCreationInformation();
+        group.set_title(name);
+        group.set_description(description);
+
+        var newGroup = groupCollection.add(group);
+        var roleDefinition = web.get_roleDefinitions().getByType(SP.RoleType.editor);
+        var roleDefinitionCollection = SP.RoleDefinitionBindingCollection.newObject(clientContext);  
+        roleDefinitionCollection.add(roleDefinition);   
+        var roleAssignments = web.get_roleAssignments();  
+        roleAssignments.add(newGroup, roleDefinitionCollection);           
+        newGroup.set_allowMembersEditMembership(true);  
+        newGroup.set_onlyAllowMembersViewMembership(false);
+
+        clientContext.executeQueryAsync(function (sender, args) {
+            console.log("Group " + name + " created...")
+        }, function (sender, args) {
+            console.error(args)
+        });        
+    },
+
     
 };

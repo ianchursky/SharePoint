@@ -46,5 +46,45 @@ SharePoint.CustomUtilities.Search = {
                 });  
             }           
         });
+    },
+
+    getAllUsers: function(searchTerm) {
+ 
+        var clientContext = new SP.ClientContext.get_current();
+        var keywordQuery = new Microsoft.SharePoint.Client.Search.Query.KeywordQuery(clientContext);
+        keywordQuery.set_queryText(searchTerm);
+        keywordQuery.set_sourceId("B09A7990-05EA-4AF9-81EF-EDFAB16C4E31");
+        keywordQuery.set_rowLimit(500);
+        keywordQuery.set_trimDuplicates(false); 
+        var searchExecutor = new Microsoft.SharePoint.Client.Search.Query.SearchExecutor(clientContext);
+        var results = searchExecutor.executeQuery(keywordQuery);
+         
+        clientContext.executeQueryAsync(function(sender, args){
+            console.log(results)
+        },
+        function(sender, args){
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        }); 
+    },
+    getSearchResults: function (queryResponse) {
+        var results = { };
+        results.elapsedTime = queryResponse.ElapsedTime;
+        results.suggestion = queryResponse.SpellingSuggestion;
+        results.resultsCount = queryResponse.PrimaryQueryResult.RelevantResults.RowCount;
+        results.totalResults = queryResponse.PrimaryQueryResult.RelevantResults.TotalRows;
+        results.totalResultsIncludingDuplicates = queryResponse.PrimaryQueryResult.RelevantResults.TotalRowsIncludingDuplicates;
+        results.items = this.convertSearchRowsToObjects(queryResponse.PrimaryQueryResult.RelevantResults.Table.Rows.results);
+        return results;
+    },    
+    convertSearchRowsToObjects: function (itemRows) {
+        var items = [];
+        for (var i = 0; i < itemRows.length; i++) {
+            var row = itemRows[i], item = {};
+            for (var j = 0; j < row.Cells.results.length; j++) {
+                item[row.Cells.results[j].Key] = row.Cells.results[j].Value;
+            }
+            items.push(item);
+        }
+        return items;
     }
 };
