@@ -5,7 +5,9 @@ SharePoint.CustomUtilities.Users = {
 
     // https://msdn.microsoft.com/en-us/library/office/jj712733.aspx
     getUserProfileProperties: function(name){
-        SP.SOD.executeFunc('personproperties', 'SP.UserProfiles', function () {
+
+        SP.SOD.registerSod('sp.userprofiles.js', SP.Utilities.Utility.getLayoutsPageUrl('sp.userprofiles.js'));
+        SP.SOD.loadMultiple(["sp.userprofiles.js"], function () {
             var clientContext = new SP.ClientContext.get_current();
             var peopleManager = new SP.UserProfiles.PeopleManager(clientContext);
             var personProperties = peopleManager.getPropertiesFor(name); /* string: 'domain\\name' for SharePoint on prem and 'i:0#.f|membership|admin@domainname.onmicrosoft.com' for Office 365 */
@@ -28,7 +30,8 @@ SharePoint.CustomUtilities.Users = {
     },  
     getMyProfileProperties: function(){
 
-        SP.SOD.executeFunc('personproperties', 'SP.UserProfiles', function () {
+        SP.SOD.registerSod('sp.userprofiles.js', SP.Utilities.Utility.getLayoutsPageUrl('sp.userprofiles.js'));
+        SP.SOD.loadMultiple(["sp.userprofiles.js"], function () {
             var clientContext = SP.ClientContext.get_current();
             var peopleManager = new SP.UserProfiles.PeopleManager(clientContext);
             var personProperties = peopleManager.getMyProperties();
@@ -51,31 +54,36 @@ SharePoint.CustomUtilities.Users = {
         });
     },
     setUserProfileProperties: function(){
-        var clientContext = SP.ClientContext.get_current();
-        var peopleManager = new SP.UserProfiles.PeopleManager(clientContext);
-        var userProfileProperties = peopleManager.getMyProperties();
-        clientContext.load(userProfileProperties);
-        clientContext.executeQueryAsync(function () {
-    
-            var currentUserAccountName = userProfileProperties.get_accountName();
-            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "Office", "Seattle");
-            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "Department", "Sales");
-            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "SPS-MUILanguages", "en-GB,en-US");
-            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "SPS-ContentLanguages", "en-GB");
-            peopleManager.setSingleValueProfileProperty(currentUserAccountName, "SPS-Locale", "1033"); 
 
-            //Set a multivalue property 
-            var projects = ["SharePoint", "Office 365", "Architecture"];
-            peopleManager.setMultiValuedProfileProperty(currentUserAccountName, "SPS-PastProjects", projects);
-    
+        SP.SOD.registerSod('sp.userprofiles.js', SP.Utilities.Utility.getLayoutsPageUrl('sp.userprofiles.js'));
+        SP.SOD.loadMultiple(["sp.userprofiles.js"], function () {
+
+            var clientContext = SP.ClientContext.get_current();
+            var peopleManager = new SP.UserProfiles.PeopleManager(clientContext);
+            var userProfileProperties = peopleManager.getMyProperties();
+            clientContext.load(userProfileProperties);
             clientContext.executeQueryAsync(function () {
-                console.log("User profile properties changed...");
+        
+                var currentUserAccountName = userProfileProperties.get_accountName();
+                peopleManager.setSingleValueProfileProperty(currentUserAccountName, "Office", "Seattle");
+                peopleManager.setSingleValueProfileProperty(currentUserAccountName, "Department", "Sales");
+                peopleManager.setSingleValueProfileProperty(currentUserAccountName, "SPS-MUILanguages", "en-GB,en-US");
+                peopleManager.setSingleValueProfileProperty(currentUserAccountName, "SPS-ContentLanguages", "en-GB");
+                peopleManager.setSingleValueProfileProperty(currentUserAccountName, "SPS-Locale", "1033"); 
+    
+                //Set a multivalue property 
+                var projects = ["SharePoint", "Office 365", "Architecture"];
+                peopleManager.setMultiValuedProfileProperty(currentUserAccountName, "SPS-PastProjects", projects);
+
+                clientContext.executeQueryAsync(function () {
+                    console.log("User profile properties changed...");
+                }, function (sender, args) {
+                    console.log(args.get_message());
+                });
+        
             }, function (sender, args) {
                 console.log(args.get_message());
             });
-    
-        }, function (sender, args) {
-            console.log(args.get_message());
         });        
     },      
     getMyUserInfoForSite: function(){

@@ -15,7 +15,7 @@ SharePoint.CustomUtilities.Lists = {
                     'ID': itemEnumerator.get_current().get_id(),
                     'Title': itemEnumerator.get_current().get_title(),
                     'Description': itemEnumerator.get_current().get_description(),
-                    'Created': itemEnumerator.get_current().get_created(),
+                    'Created': itemEnumerator.get_current().get_created()
                 };
                 itemArray.push(data);            
             }
@@ -190,7 +190,21 @@ SharePoint.CustomUtilities.Lists = {
         }, function () {
         });
     },
-
+    updateListField: function(listName, fieldName){
+        var clientContext = new SP.ClientContext.get_current();
+        var web = clientContext.get_web();
+        var list = web.get_lists().getByTitle("Rise Application Directory");
+        var fields = list.get_fields();
+        var field = fields.getByInternalNameOrTitle("Application Image");
+        field.setShowInNewForm = true;
+        field.setShowInEditForm = true;
+        field.update()
+        clientContext.executeQueryAsync(function () {
+            console.log("List field updated");
+        }, function (sender, args) {
+            console.error('Request failed. ' + args.get_message() + '\n' + args.get_stackTrace());
+        });        
+    },
     getImageRenditions: function(){
         var clientContext = new SP.ClientContext.get_current();
         var renditions = SP.Publishing.SiteImageRenditions.getRenditions(clientContext);
