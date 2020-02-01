@@ -86,5 +86,40 @@ SharePoint.CustomUtilities.Search = {
             items.push(item);
         }
         return items;
+    },
+    getManagedProperties: function(query) {
+        
+        // query is a string e.g... `ContentTypeId:0x010100C568DB52D9D0A14D9B2FDCC96666E9F2007948130EC3DB064584E219954237AF3900242457EFB8B24247815D688C526CD44D0014107EC48E4A4F77B204AD0DA6EDE3B1*`
+
+        fetch('/_api/contextInfo', {
+            method: "POST",
+            headers: {
+                "Accept": "application/json;odata=verbose",
+                "Content-Type": "application/json;odata=verbose"
+            }
+        }).then(res => res.json()).then(contextData => {
+            fetch(`/_api/search/query?queryText='${query}'&rowlimit=1&refiners='managedproperties(filter%3d600%2f0%2f*)'`, {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json;odata=verbose",
+                    "Content-Type": "application/json;odata=verbose",
+                    "X-RequestDigest": contextData.d.GetContextWebInformation.FormDigestValue
+                }
+            }).then(res => res.json()).then(data => {
+                let managedProperties = data.d.query.PrimaryQueryResult.RefinementResults.Refiners.results[0].Entries.results.map(item => item.RefinementName);
+                let searchResults = data && data.d && data.d.query;
+                let results = searchResults.PrimaryQueryResult && searchResults.PrimaryQueryResult.RelevantResults;
+                let items = [];
+                results.Table.Rows.results.forEach(row => {
+                    items.push(row.Cells.results.reduce((rowData, cell) => {
+                        rowData[cell.Key] = cell.Value;
+                        return rowData;
+                    }, {}));
+                    return row;
+                }, []);
+                console.log('All Managed Properties for item', items[0], managedProperties);
+                return managedProperties;
+            });
+        });
     }
 };
